@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require("apollo-server")
+const { gql } = require("apollo-server")
 
 // The GraphQL schema
 module.exports = gql`
@@ -15,8 +15,12 @@ module.exports = gql`
     verified: Boolean!
     verification_code: Int!
     confirmed: Boolean!
+    id: Int!
   }
   type Query {
     auth: User!
+  }
+  type Mutation {
+    register(first_name: String! middle_name: String last_name: String! username: String! email: String! password: String! confirmPassword: String! ) : User!
   }
 `
