@@ -16,11 +16,26 @@ module.exports = gql`
     verification_code: Int!
     confirmed: Boolean!
     id: Int!
+    token: String!
   }
   type Query {
     auth: User!
+    login(
+      email_username: String!
+      password: String!
+    ): User!
   }
   type Mutation {
-    register(first_name: String! middle_name: String last_name: String! username: String! email: String! password: String! confirmPassword: String! ) : User!
+    register(
+      first_name: String!
+      middle_name: String
+      last_name: String!
+      username: String!
+      email: String!
+      password: String!
+      confirmPassword: String!
+      type: String!
+    ): User!
+    verifyAccount(code: Int!): User!
   }
 `

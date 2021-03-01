@@ -33,6 +33,12 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: false,
         unique: true,
+        validate: {
+          isEmail: {
+            args: true,
+            msg: "must be a valid email address",
+          },
+        },
       },
       password: {
         type: DataTypes.STRING,
@@ -40,31 +46,27 @@ module.exports = (sequelize, DataTypes) => {
       },
       status: {
         type: DataTypes.STRING,
-        allowNull: false,
       },
       account_status: {
         type: DataTypes.STRING,
-        allowNull: false,
       },
       type: {
         type: DataTypes.STRING,
-        allowNull: false,
       },
       deleted_status: {
         type: DataTypes.BOOLEAN,
-        allowNull: false,
       },
       verified: {
         type: DataTypes.BOOLEAN,
-        allowNull: false,
+        defaultValue: false,
       },
       verification_code: {
         type: DataTypes.BIGINT(11),
-        allowNull: false,
       },
       confirmed: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: false,
       },
       suspendedAt: {
         type: DataTypes.DATE,

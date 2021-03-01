@@ -28,6 +28,12 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: false,
         unique: true,
+        validate: {
+          isEmail: {
+            args: true,
+            msg: "must be a valid email address",
+          },
+        },
       },
       password: {
         type: Sequelize.STRING,
@@ -35,31 +41,27 @@ module.exports = {
       },
       status: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       account_status: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       type: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       deleted_status: {
         type: Sequelize.BOOLEAN,
-        allowNull: false,
       },
       verified: {
         type: Sequelize.BOOLEAN,
-        allowNull: false,
+        defaultValue: false,
       },
       verification_code: {
         type: Sequelize.BIGINT(11),
-        allowNull: false,
       },
       confirmed: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
+        defaultValue: false,
       },
       suspendedAt: {
         type: Sequelize.DATE,
@@ -69,7 +71,7 @@ module.exports = {
         type: Sequelize.DATE,
       },
       updatedAt: {
-        allowNull: false,
+        allowNull: true,
         type: Sequelize.DATE,
       },
     })
