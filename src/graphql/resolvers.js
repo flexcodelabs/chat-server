@@ -10,6 +10,7 @@ const {
   acceptConnection,
   rejectConnection,
   getConnections,
+  getAllConnections,
 } = require("../controllers/connections")
 const {
   follow,
@@ -25,6 +26,7 @@ module.exports = {
     getFollowers,
     getFollowings,
     getConnections,
+    getAllConnections,
   },
   Mutation: {
     register,

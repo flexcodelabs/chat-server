@@ -1,6 +1,7 @@
-const { Follow } = require("../../models")
+const { Follow, Users } = require("../../models")
 const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
+const { sequelize } = require("../../models")
 
 exports.follow = async (_, { id }, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
@@ -12,7 +13,7 @@ exports.follow = async (_, { id }, { user }) => {
     }
     let check = await Follow.findOne({
       where: {
-        [Op.or]: [{ user: user.id }, { follows: id }],
+        [Op.and]: [{ user: user.id }, { follows: id }],
       },
     })
     if (check) {
@@ -58,8 +59,26 @@ exports.unfollow = async (_, { id }, { user }) => {
 
 exports.getFollowers = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
+  try {
+    const [results, metadata] = await sequelize.query(
+      `SELECT username FROM users WHERE id IN(SELECT user FROM follows WHERE follows=${user.id})`
+    )
+
+    return results
+  } catch (err) {
+    throw err
+  }
 }
 
 exports.getFollowings = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
+
+  try {
+    const [results, metadata] = await sequelize.query(
+      `SELECT username FROM users WHERE id IN(SELECT follows FROM follows WHERE user=${user.id})`
+    )
+    return results
+  } catch (err) {
+    throw err
+  }
 }

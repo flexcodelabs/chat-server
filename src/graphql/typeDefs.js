@@ -28,16 +28,22 @@ module.exports = gql`
   }
   type Connections {
     id: Int!
+    user_one: Int!
+    user_two: Int!
   }
   type Follow {
     id: Int!
+    user: Int!
+    follows: Int!
   }
+
   type Query {
     auth: User!
     login(email_username: String!, password: String!): User!
     getFollowers: [User]
     getFollowings: [User]
-    getConnections: [User]
+    getConnections: [User!]
+    getAllConnections: [Connections]
     getUnacceptedRequests: [User]
     getConnectionRequests: [User]
   }

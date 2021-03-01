@@ -1,6 +1,7 @@
 const { Connections, Users } = require("../../models")
 const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
+const { sequelize } = require("../../models")
 
 exports.requestConnection = async (_, args, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
@@ -41,8 +42,12 @@ exports.requestConnection = async (_, args, { user }) => {
       throw new UserInputError("Bad Input", { warning })
     }
 
-    if (check) {
+    if (check && check.confirmed === true) {
       warning.msg = "Request was already made with this user"
+      throw new UserInputError("Bad Input", { warning })
+    }
+    if (check) {
+      warning.msg = "You are already connected"
       throw new UserInputError("Bad Input", { warning })
     } else {
       let connect = await Connections.create({
@@ -90,7 +95,7 @@ exports.acceptConnection = async (_, { id }, { user }) => {
     ) {
       warning.msg = "Request already accepted"
       throw new UserInputError("Bad Input", { warning })
-    } else if (connection && connection.user_two !== user.id) {
+    } else if (connection && connection.user_one === user.id) {
       warning.msg = "You can't accept your own request"
       throw new UserInputError("Bad Input", { warning })
     } else {
@@ -142,22 +147,21 @@ getUnacceptedRequests = async (_, __, { user }) => {
 exports.getConnections = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let error = null
+  Connections.belongsTo(Users)
+  Users.hasMany(Connections)
+
   try {
-    let fetchConnections = await Users.findAll({
-      where: {
-        id: user.id,
-      },
-      includes: [
-        {
-          model: Connections,
-          where: {
-            [Op.or]: [{ user_one: user.id }, { user_two: user.id }],
-          },
-        },
-      ],
-    })
-    return fetchConnections
+    const [results, metadata] = await sequelize.query(
+      `SELECT username FROM users WHERE id IN(SELECT user_one FROM connections WHERE user_one=${user.id} or user_two=${user.id})`
+    )
+
+    return results
   } catch (err) {
     throw err
   }
+}
+
+exports.getAllConnections = async () => {
+  let connections = await Connections.findAll()
+  return connections
 }
