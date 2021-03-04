@@ -193,3 +193,8 @@ exports.auth = async (_, __, { user }) => {
     throw new UserInputError("Bad Input", { error })
   }
 }
+
+exports.getUsers = async () => {
+  let users = await Users.findAll()
+  return users
+}

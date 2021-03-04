@@ -1,4 +1,4 @@
-const { Follow, Users } = require("../../models")
+const { Follow, Connections } = require("../../models")
 const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
 const { sequelize } = require("../../models")
@@ -16,8 +16,25 @@ exports.follow = async (_, { id }, { user }) => {
         [Op.and]: [{ user: user.id }, { follows: id }],
       },
     })
-    if (check) {
-      warning.msg = "You already followed this user"
+    let statusCheck = await Connections.findAll({
+      where: {
+        [Op.or]: [
+          {
+            [Op.and]: [{ userId: user.id }, { connectedTo: id }],
+          },
+          {
+            [Op.and]: [{ userId: id }, { connectedTo: user.id }],
+          },
+        ],
+        status: "B",
+        active_user_id: id,
+      },
+    })
+    if (statusCheck && statusCheck.status === "B")
+      warning.msg = "Can't follow this user"
+    if (check) warning.msg = "You already followed this user"
+
+    if (Object.keys(warning).length > 0) {
       throw new UserInputError("Bad Input", warning)
     } else {
       let following = await Follow.create({
@@ -61,7 +78,7 @@ exports.getFollowers = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username FROM users WHERE id IN(SELECT user FROM follows WHERE follows=${user.id})`
+      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT user FROM follows WHERE follows=${user.id})`
     )
 
     return results
@@ -75,7 +92,7 @@ exports.getFollowings = async (_, __, { user }) => {
 
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username FROM users WHERE id IN(SELECT follows FROM follows WHERE user=${user.id})`
+      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT follows FROM follows WHERE user=${user.id})`
     )
     return results
   } catch (err) {

@@ -26,10 +26,17 @@ module.exports = gql`
     updatedAt: String
     location: String
   }
-  type Connections {
-    id: Int!
-    user_one: Int!
-    user_two: Int!
+  type ConnectionRequest {
+    id: Int
+    addressee: Int!
+    requester: Int!
+  }
+  type Connection {
+    id: Int
+    userId: Int!
+    connectedTo: Int!
+    status: String!
+    active_user_id: Int!
   }
   type Follow {
     id: Int!
@@ -40,12 +47,14 @@ module.exports = gql`
   type Query {
     auth: User!
     login(email_username: String!, password: String!): User!
-    getFollowers: [User]
-    getFollowings: [User]
+    getFollowers: [User!]
+    getFollowings: [User!]
     getConnections: [User!]
-    getAllConnections: [Connections]
     getUnacceptedRequests: [User]
     getConnectionRequests: [User]
+    getUserConnectionRequests: [User]
+    getUsers: [User!]
+    searchProfile(keyword: String!): [User!]
   }
   type Mutation {
     register(
@@ -68,10 +77,19 @@ module.exports = gql`
     ): User
     addDp(dp: String): User!
     addCoverImg(cover_image: String): User!
-    requestConnection(user_two: Int!): Connections
-    acceptConnection(id: Int!): Connections
-    rejectConnection(id: Int!): Connections
+    requestConnection(addressee: Int!): ConnectionRequest
+    acceptConnection(id: Int!, requester: Int!): Connection!
+    rejectConnection(id: Int!, requester: Int!): ConnectionRequest!
+    deleteConnection(id: Int!): Connection
+    blockUser(userId: Int!): Connection
+    unBlockUser(userId: Int!): Connection
     follow(id: Int!): Follow
     unfollow(id: Int!): Follow
   }
+  type Subscription {
+    newFollower: User
+    newConnectionRequest: User
+  }
 `
+
+// set subscription method so I can start working on the client side of the app

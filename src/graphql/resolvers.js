@@ -1,4 +1,10 @@
-const { register, verifyAccount, login, auth } = require("../controllers/users")
+const {
+  register,
+  verifyAccount,
+  login,
+  auth,
+  getUsers,
+} = require("../controllers/users")
 const {
   addUserInfo,
   updateUserInfo,
@@ -9,8 +15,12 @@ const {
   requestConnection,
   acceptConnection,
   rejectConnection,
+  deleteConnection,
   getConnections,
-  getAllConnections,
+  getUserConnectionRequests,
+  getConnectionRequests,
+  blockUser,
+  unBlockUser,
 } = require("../controllers/connections")
 const {
   follow,
@@ -19,6 +29,8 @@ const {
   getFollowings,
 } = require("../controllers/follow")
 
+const { searchProfile } = require("../controllers/search")
+
 module.exports = {
   Query: {
     auth,
@@ -26,7 +38,10 @@ module.exports = {
     getFollowers,
     getFollowings,
     getConnections,
-    getAllConnections,
+    getUserConnectionRequests,
+    getConnectionRequests,
+    getUsers,
+    searchProfile,
   },
   Mutation: {
     register,
@@ -38,7 +53,12 @@ module.exports = {
     requestConnection,
     acceptConnection,
     rejectConnection,
+    deleteConnection,
+    blockUser,
+    unBlockUser,
     follow,
     unfollow,
   },
 }
+
+// set subscription method so I can start working on the client side of the app
