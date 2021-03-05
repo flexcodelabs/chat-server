@@ -66,6 +66,13 @@ module.exports = {
       suspendedAt: {
         type: Sequelize.DATE,
       },
+      gender: Sequelize.STRING(1),
+      about: Sequelize.TEXT("long"),
+      bio: Sequelize.STRING,
+      DOB: Sequelize.DATE,
+      dp: Sequelize.STRING,
+      cover_image: Sequelize.STRING,
+      location: Sequelize.STRING,
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
