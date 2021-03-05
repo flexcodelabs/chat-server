@@ -45,9 +45,6 @@ module.exports = {
       account_status: {
         type: Sequelize.STRING,
       },
-      type: {
-        type: Sequelize.STRING,
-      },
       deleted_status: {
         type: Sequelize.BOOLEAN,
       },

@@ -10,7 +10,6 @@ module.exports = gql`
     username: String!
     status: String
     account_status: String!
-    type: String!
     deleted_status: Boolean!
     verified: Boolean!
     verification_code: Int!
@@ -25,6 +24,7 @@ module.exports = gql`
     createdAt: String
     updatedAt: String
     location: String
+    gender: String
   }
   type ConnectionRequest {
     id: Int
@@ -73,7 +73,6 @@ module.exports = gql`
       type: String!
     ): User!
     verifyAccount(code: Int!): User!
-    addUserInfo(about: String, bio: String, DOB: String, location: String): User
     updateUserInfo(
       about: String
       bio: String

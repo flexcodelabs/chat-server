@@ -1,44 +1,26 @@
 const { AuthenticationError } = require("apollo-server")
-const { User_Info } = require("../../models")
+const { Users } = require("../../models")
 
-exports.addUserInfo = async (_, args, { user }) => {
-  let { about, bio, DOB, location } = args
-  if (!user) throw new AuthenticationError("Unauthenticated")
-  try {
-    let add_details = await User_Info.create({
-      userId: user.id,
-      about,
-      bio,
-      DOB,
-      location,
-    })
-
-    console.log(add_details)
-    return add_details
-  } catch (err) {
-    throw err
-  }
-}
 exports.updateUserInfo = async (_, args, { user }) => {
-  let { about, bio, DOB, location } = args
+  let { about, bio, DOB, location, gender } = args
   if (!user) throw new AuthenticationError("Unauthenticated")
   try {
-    let add_details = await User_Info.update(
+    let add_details = await Users.update(
       {
-        userId: user.id,
         about,
         bio,
         DOB,
         location,
+        gender,
       },
       {
         where: {
-          userId: user.id,
+          id: user.id,
         },
       }
     )
     console.log(add_details)
-    let added_data = await User_Info.findOne({ where: { userId: user.id } })
+    let added_data = await Users.findOne({ where: { id: user.id } })
     return added_data
   } catch (err) {
     throw err

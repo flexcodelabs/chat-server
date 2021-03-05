@@ -50,9 +50,6 @@ module.exports = (sequelize, DataTypes) => {
       account_status: {
         type: DataTypes.STRING,
       },
-      type: {
-        type: DataTypes.STRING,
-      },
       deleted_status: {
         type: DataTypes.BOOLEAN,
       },

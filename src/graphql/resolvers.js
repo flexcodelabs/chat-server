@@ -1,7 +1,6 @@
 const { withFilter, AuthenticationError } = require("apollo-server")
 const { register, verifyAccount, login, auth } = require("../controllers/users")
 const {
-  addUserInfo,
   updateUserInfo,
   addDp,
   addCoverImg,
@@ -50,7 +49,6 @@ module.exports = {
   Mutation: {
     register,
     verifyAccount,
-    addUserInfo,
     updateUserInfo,
     addDp,
     addCoverImg,
