@@ -18,6 +18,5 @@ module.exports = (context) => {
   }
 
   context.pubsub = pubsub
-
   return context
 }

@@ -1,9 +1,9 @@
-const { Follow, Connections } = require("../../models")
+const { Follow, Connections, Users } = require("../../models")
 const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
 const { sequelize } = require("../../models")
 
-exports.follow = async (_, { id }, { user }) => {
+exports.follow = async (_, { id }, { user, pubsub }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let warning = {}
   try {
@@ -30,6 +30,10 @@ exports.follow = async (_, { id }, { user }) => {
         active_user_id: id,
       },
     })
+    let userCheck = await Users.findOne({
+      where: { id },
+    })
+    if (!userCheck) warning.msg = "This user doesn't exists"
     if (statusCheck && statusCheck.status === "B")
       warning.msg = "Can't follow this user"
     if (check) warning.msg = "You already followed this user"
@@ -40,6 +44,18 @@ exports.follow = async (_, { id }, { user }) => {
       let following = await Follow.create({
         user: user.id,
         follows: id,
+      })
+      let userData
+      if (following) {
+        userData = await Users.findOne({
+          where: {
+            id: user.id,
+          },
+        })
+      }
+      console.log(userData)
+      pubsub.publish("NEW_FOLLOWER", {
+        newFollower: { ...userData.toJSON(), userId: following.follows },
       })
       return following
     }
@@ -54,17 +70,16 @@ exports.unfollow = async (_, { id }, { user }) => {
   try {
     let check = await Follow.findOne({
       where: {
-        id,
+        [Op.and]: [{ user: user.id }, { follows: id }],
       },
     })
     if (check && check.user === user.id) {
       let unfollowing = await Follow.destroy({
         where: {
-          id,
+          [Op.and]: [{ user: user.id }, { follows: id }],
         },
       })
-      console.log(unfollowing)
-      return check
+      return { ...check.toJSON(), unfollowing }
     } else {
       warning.msg = "Unauthorized"
       throw new UserInputError("Bad Input", warning)
@@ -88,6 +103,7 @@ exports.getFollowers = async (_, __, { user }) => {
 }
 
 exports.getFollowings = async (_, __, { user }) => {
+  console.log(user)
   if (!user) throw new AuthenticationError("Unauthenticated")
 
   try {
@@ -95,6 +111,34 @@ exports.getFollowings = async (_, __, { user }) => {
       `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT follows FROM follows WHERE user=${user.id})`
     )
     return results
+  } catch (err) {
+    throw err
+  }
+}
+
+exports.getFollowersCount = async (_, __, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  try {
+    let count = await Follow.count({
+      where: {
+        follows: user.id,
+      },
+    })
+    return count
+  } catch (err) {
+    throw err
+  }
+}
+
+exports.getFollowingsCount = async (_, __, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  try {
+    let count = await Follow.count({
+      where: {
+        user: user.id,
+      },
+    })
+    return count
   } catch (err) {
     throw err
   }

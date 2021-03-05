@@ -3,6 +3,4 @@ const { Op } = require("sequelize")
 
 const { Users } = require("../../models")
 
-exports.searchProfile = async (_, { keyword }) => {
-  return keyword
-}
+exports.searchProfile = async (_, { keyword }, { user }) => {}

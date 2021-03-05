@@ -8,7 +8,7 @@ const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
 const { sequelize } = require("../../models")
 
-exports.requestConnection = async (_, { addressee }, { user }) => {
+exports.requestConnection = async (_, { addressee }, { user, pubsub }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let warning = {}
   try {
@@ -78,6 +78,20 @@ exports.requestConnection = async (_, { addressee }, { user }) => {
         requester: user.id,
         addressee,
       })
+      let userData
+      if (connect) {
+        userData = await Users.findOne({
+          where: {
+            id: user.id,
+          },
+        })
+      }
+      pubsub.publish("NEW_CONNECTION_REQUEST", {
+        newConnectionRequest: {
+          ...userData.toJSON(),
+          addressee: connect.addressee,
+        },
+      })
       return connect
     }
   } catch (err) {
@@ -85,14 +99,14 @@ exports.requestConnection = async (_, { addressee }, { user }) => {
   }
 }
 
-exports.acceptConnection = async (_, { requester }, { user }) => {
+exports.acceptConnection = async (_, { requester }, { user, pubsub }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let warning = {}
   try {
     //   checks for the existing connection
     let connectionRequest = await ConnectionsRequests.findOne({
       where: {
-        requester,
+        [Op.and]: [{ requester }, { addressee: user.id }],
       },
     })
     let connectionCheck = await Connections.findAll({
@@ -108,6 +122,7 @@ exports.acceptConnection = async (_, { requester }, { user }) => {
       },
       attributes: ["id", "userId", "connectedTo", "status"],
     })
+
     if (!connectionRequest) warning.msg = "Request doesn't exists"
     if (connectionRequest && connectionRequest.requester === user.id)
       warning.msg = "You cant accept your own request"
@@ -135,11 +150,28 @@ exports.acceptConnection = async (_, { requester }, { user }) => {
       let deleteRequest = await ConnectionsRequests.destroy({
         where: {
           requester,
+          addressee: user.id,
+        },
+      })
+      let userData
+
+      if (accept && accept_two) {
+        userData = await Users.findOne({
+          where: {
+            id: user.id,
+          },
+        })
+      }
+      pubsub.publish("NEW_CONNECTION", {
+        newConnection: {
+          ...userData.toJSON(),
+          userId: accept.userId,
+          connectedTo: accept.connectedTo,
+          status: "A",
         },
       })
       return {
         ...accept.toJSON(),
-        ...accept_two.toJSON(),
         deleteRequest,
       }
     }
@@ -156,6 +188,7 @@ exports.rejectConnection = async (_, { requester }, { user }) => {
     let connectionRequest = await ConnectionsRequests.findOne({
       where: {
         requester,
+        addressee: user.id,
       },
     })
     let connectionCheck = await Connections.findAll({
@@ -213,13 +246,20 @@ exports.deleteConnection = async (_, { id }, { user }) => {
       attributes: ["id", "userId", "connectedTo", "status"],
     })
 
+    if (connectionCheck.length === 0)
+      warning.msg = "This connection doesn't exist"
+
     if (
       connectionCheck &&
       connectionCheck[0] &&
-      connectionCheck[0].userId !== user.id &&
-      connectionCheck[0].connectedTo !== user.id
+      !(
+        connectionCheck[0].userId !== user.id ||
+        connectionCheck[0].connectedTo !== user.id
+      )
     )
       warning.msg = "Unathorized"
+    console.log(connectionCheck)
+
     if (Object.keys(warning).length > 0) {
       throw new UserInputError("Bad Input", { warning })
     } else {
@@ -228,7 +268,7 @@ exports.deleteConnection = async (_, { id }, { user }) => {
           id: [connectionCheck[0].id, connectionCheck[1].id],
         },
       })
-      return { ...connectionCheck[0], connectDestroy }
+      return { ...connectionCheck[0].toJSON(), connectDestroy }
     }
   } catch (err) {
     throw err
@@ -430,11 +470,45 @@ exports.getConnections = async (_, __, { user }) => {
 
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT userId FROM connections WHERE connectedTo=${user.id})`
+      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT connectedTo FROM connections WHERE connectedTo=${user.id} and status != "B")`
     )
 
     return results
   } catch (err) {
     throw err
   }
+}
+
+exports.getConnectionsCount = async (_, __, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  try {
+    let count = await Connections.count({
+      where: {
+        userId: user.id,
+        status: "A",
+      },
+    })
+    return count
+  } catch (err) {
+    throw err
+  }
+}
+
+exports.getBlockedUsers = async (_, __, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+
+  try {
+    const [results, metadata] = await sequelize.query(
+      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT userId FROM connections WHERE userId=${user.id} and status='B' and active_user_id = ${user.id})`
+    )
+
+    return results
+  } catch (err) {
+    throw err
+  }
+}
+
+exports.getAllConnections = async () => {
+  let connects = await ConnectionsRequests.findAll()
+  return connects
 }

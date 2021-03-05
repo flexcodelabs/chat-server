@@ -1,10 +1,5 @@
-const {
-  register,
-  verifyAccount,
-  login,
-  auth,
-  getUsers,
-} = require("../controllers/users")
+const { withFilter, AuthenticationError } = require("apollo-server")
+const { register, verifyAccount, login, auth } = require("../controllers/users")
 const {
   addUserInfo,
   updateUserInfo,
@@ -19,6 +14,9 @@ const {
   getConnections,
   getUserConnectionRequests,
   getConnectionRequests,
+  getAllConnections,
+  getConnectionsCount,
+  getBlockedUsers,
   blockUser,
   unBlockUser,
 } = require("../controllers/connections")
@@ -27,6 +25,8 @@ const {
   unfollow,
   getFollowers,
   getFollowings,
+  getFollowersCount,
+  getFollowingsCount,
 } = require("../controllers/follow")
 
 const { searchProfile } = require("../controllers/search")
@@ -40,7 +40,11 @@ module.exports = {
     getConnections,
     getUserConnectionRequests,
     getConnectionRequests,
-    getUsers,
+    getConnectionsCount,
+    getAllConnections,
+    getBlockedUsers,
+    getFollowersCount,
+    getFollowingsCount,
     searchProfile,
   },
   Mutation: {
@@ -59,6 +63,53 @@ module.exports = {
     follow,
     unfollow,
   },
+  Subscription: {
+    newFollower: {
+      subscribe: withFilter(
+        (_, __, { pubsub, user }) => {
+          if (!user) throw new AuthenticationError("Unauthenticated")
+          return pubsub.asyncIterator(["NEW_FOLLOWER"])
+        },
+        ({ newFollower }, _, { user }) => {
+          if (newFollower.userId === user.id) {
+            return true
+          }
+          return false
+        }
+      ),
+    },
+    newConnectionRequest: {
+      subscribe: withFilter(
+        (_, __, { user, pubsub }) => {
+          if (!user) throw new AuthenticationError("Unauthenticated")
+          return pubsub.asyncIterator("NEW_CONNECTION_REQUEST")
+        },
+        ({ newConnectionRequest }, _, { user }) => {
+          if (newConnectionRequest.addressee === user.id) {
+            return true
+          }
+          return false
+        }
+      ),
+    },
+    newConnection: {
+      subscribe: withFilter(
+        (_, __, { user, pubsub }) => {
+          if (!user) throw new AuthenticationError("Unauthenticated")
+          return pubsub.asyncIterator("NEW_CONNECTION")
+        },
+        ({ newConnection }, _, { user }) => {
+          console.log(newConnection)
+          if (
+            (newConnection.userId === user.id ||
+              newConnection.connectedTo === user.id) &&
+            newConnection.status === "A"
+          ) {
+            return true
+          }
+          return false
+        }
+      ),
+    },
+  },
 }
-
-// set subscription method so I can start working on the client side of the app

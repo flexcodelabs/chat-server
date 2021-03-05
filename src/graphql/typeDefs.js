@@ -49,11 +49,16 @@ module.exports = gql`
     login(email_username: String!, password: String!): User!
     getFollowers: [User!]
     getFollowings: [User!]
-    getConnections: [User!]
+    getConnections: [User]
     getUnacceptedRequests: [User]
     getConnectionRequests: [User]
+    getAllConnections: [ConnectionRequest]
     getUserConnectionRequests: [User]
+    getConnectionsCount: String
+    getBlockedUsers: [User]
     getUsers: [User!]
+    getFollowersCount: String
+    getFollowingsCount: String
     searchProfile(keyword: String!): [User!]
   }
   type Mutation {
@@ -77,9 +82,9 @@ module.exports = gql`
     ): User
     addDp(dp: String): User!
     addCoverImg(cover_image: String): User!
-    requestConnection(addressee: Int!): ConnectionRequest
-    acceptConnection(id: Int!, requester: Int!): Connection!
-    rejectConnection(id: Int!, requester: Int!): ConnectionRequest!
+    requestConnection(addressee: Int!): Connection
+    acceptConnection(requester: Int!): Connection
+    rejectConnection(requester: Int!): ConnectionRequest!
     deleteConnection(id: Int!): Connection
     blockUser(userId: Int!): Connection
     unBlockUser(userId: Int!): Connection
@@ -89,7 +94,6 @@ module.exports = gql`
   type Subscription {
     newFollower: User
     newConnectionRequest: User
+    newConnection: User
   }
 `
-
-// set subscription method so I can start working on the client side of the app
