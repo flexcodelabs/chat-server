@@ -11,7 +11,6 @@ exports.register = async (_, args) => {
     middle_name,
     last_name,
     username,
-    type,
     email,
     password,
     confirmPassword,
@@ -28,7 +27,6 @@ exports.register = async (_, args) => {
       errors.last_name = "This field shouldn't be empty"
     if (username.trim() === "")
       errors.username = "This field shouldn't be empty"
-    if (type.trim() === "") errors.type = "This firld shouldn't be empty"
     if (password.trim() === "")
       errors.password = "This field must have atleast 6 characters"
     if (confirmPassword.trim() === "")
@@ -51,7 +49,6 @@ exports.register = async (_, args) => {
       middle_name,
       last_name,
       username,
-      type,
       email,
       password,
       verification_code,

@@ -25,6 +25,7 @@ module.exports = gql`
     updatedAt: String
     location: String
     gender: String
+    title: String
   }
   type ConnectionRequest {
     id: Int
@@ -70,7 +71,6 @@ module.exports = gql`
       email: String!
       password: String!
       confirmPassword: String!
-      type: String!
     ): User!
     verifyAccount(code: Int!): User!
     updateUserInfo(
@@ -78,6 +78,8 @@ module.exports = gql`
       bio: String
       DOB: String
       location: String
+      gender: String
+      title: String
     ): User
     addDp(dp: String): User!
     addCoverImg(cover_image: String): User!

@@ -68,6 +68,7 @@ module.exports = (sequelize, DataTypes) => {
       suspendedAt: {
         type: DataTypes.DATE,
       },
+      title: DataTypes.STRING,
       gender: DataTypes.STRING(1),
       about: DataTypes.TEXT("long"),
       bio: DataTypes.STRING,

@@ -63,6 +63,7 @@ module.exports = {
       suspendedAt: {
         type: Sequelize.DATE,
       },
+      title: Sequelize.STRING,
       gender: Sequelize.STRING(1),
       about: Sequelize.TEXT("long"),
       bio: Sequelize.STRING,

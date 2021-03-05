@@ -2,7 +2,7 @@ const { AuthenticationError } = require("apollo-server")
 const { Users } = require("../../models")
 
 exports.updateUserInfo = async (_, args, { user }) => {
-  let { about, bio, DOB, location, gender } = args
+  let { about, bio, DOB, location, gender, title } = args
   if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     let add_details = await Users.update(
@@ -12,6 +12,7 @@ exports.updateUserInfo = async (_, args, { user }) => {
         DOB,
         location,
         gender,
+        title,
       },
       {
         where: {
