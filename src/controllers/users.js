@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 const { Op } = require("sequelize")
 
-const { Users } = require("../../models")
+const { Users, Chats } = require("../../models")
 
 exports.register = async (_, args) => {
   let {
@@ -142,7 +142,12 @@ exports.verifyAccount = async (_, { code }, { user }) => {
         { raw: true }
       )
 
-      console.log(userVerified)
+      let chat = await Chats.create({
+        user_one: user.id,
+        user_two: user.id,
+        status: true,
+        active_user: user.id,
+      })
 
       let userData = await Users.findOne({
         where: {
@@ -159,6 +164,8 @@ exports.verifyAccount = async (_, { code }, { user }) => {
       )
 
       return {
+        userVerified,
+        chat,
         ...userData.toJSON(),
         token,
       }
@@ -173,21 +180,16 @@ exports.verifyAccount = async (_, { code }, { user }) => {
 
 exports.auth = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
-  let error = null
   try {
     let userData = await Users.findOne({
       where: {
         id: user.id,
       },
     })
-    if (userData.verified) {
-      return userData
-    } else {
-      error = "Your account is not activated"
-      throw error
-    }
+
+    return userData
   } catch (err) {
-    throw new UserInputError("Bad Input", { error })
+    throw err
   }
 }
 

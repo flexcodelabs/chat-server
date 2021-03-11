@@ -1,4 +1,4 @@
-const { AuthenticationError } = require("apollo-server")
+const { AuthenticationError, UserInputError } = require("apollo-server")
 const { Users } = require("../../models")
 
 exports.updateUserInfo = async (_, args, { user }) => {
@@ -36,4 +36,23 @@ exports.addDp = async (_, args, { user }) => {
 exports.addCoverImg = async (_, args, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let {} = args
+}
+
+exports.getUser = async (_, { id }) => {
+  let msg = null
+  try {
+    let user = await Users.findOne({
+      where: {
+        id,
+      },
+    })
+    if (!user) {
+      msg = "User Not found"
+      throw new UserInputError("NOT FOUND", { msg })
+    } else {
+      return user
+    }
+  } catch (err) {
+    throw err
+  }
 }

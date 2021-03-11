@@ -68,6 +68,11 @@ module.exports = (sequelize, DataTypes) => {
       suspendedAt: {
         type: DataTypes.DATE,
       },
+      chatType: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "private",
+      },
       title: DataTypes.STRING,
       gender: DataTypes.STRING(1),
       about: DataTypes.TEXT("long"),

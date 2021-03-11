@@ -3,10 +3,11 @@ const {
   Users,
   Connections,
   Follow,
+  Chats,
+  sequelize,
 } = require("../../models")
 const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
-const { sequelize } = require("../../models")
 
 exports.requestConnection = async (_, { addressee }, { user, pubsub }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
@@ -123,6 +124,19 @@ exports.acceptConnection = async (_, { requester }, { user, pubsub }) => {
       attributes: ["id", "userId", "connectedTo", "status"],
     })
 
+    let chatCheck = await Chats.findOne({
+      where: {
+        [Op.or]: [
+          {
+            [Op.and]: [{ user_one: user.id }, { user_two: requester }],
+          },
+          {
+            [Op.and]: [{ user_one: requester }, { user_two: user.id }],
+          },
+        ],
+      },
+    })
+
     if (!connectionRequest) warning.msg = "Request doesn't exists"
     if (connectionRequest && connectionRequest.requester === user.id)
       warning.msg = "You cant accept your own request"
@@ -153,6 +167,15 @@ exports.acceptConnection = async (_, { requester }, { user, pubsub }) => {
           addressee: user.id,
         },
       })
+      let addChat
+      if (!chatCheck) {
+        addChat = await Chats.create({
+          user_one: user.id,
+          user_two: requester,
+          status: true,
+          active_user: user.id,
+        })
+      }
       let userData
 
       if (accept && accept_two) {
@@ -173,6 +196,7 @@ exports.acceptConnection = async (_, { requester }, { user, pubsub }) => {
       return {
         ...accept.toJSON(),
         deleteRequest,
+        addChat,
       }
     }
   } catch (err) {
@@ -443,7 +467,7 @@ exports.getConnectionRequests = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT requester FROM connections_requests WHERE addressee=${user.id})`
+      `SELECT * FROM users WHERE id IN(SELECT requester FROM connections_requests WHERE addressee=${user.id})`
     )
 
     return results
@@ -456,7 +480,7 @@ exports.getUserConnectionRequests = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT addressee FROM connections_requests WHERE requester=${user.id})`
+      `SELECT * FROM users WHERE id IN(SELECT addressee FROM connections_requests WHERE requester=${user.id})`
     )
 
     return results
@@ -465,12 +489,12 @@ exports.getUserConnectionRequests = async (_, __, { user }) => {
   }
 }
 
-exports.getConnections = async (_, __, { user }) => {
-  if (!user) throw new AuthenticationError("Unauthenticated")
+exports.getConnections = async (_, { id }) => {
+  // if (!user) throw new AuthenticationError("Unauthenticated")
 
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT connectedTo FROM connections WHERE connectedTo=${user.id} and status != "B")`
+      `SELECT * FROM users WHERE id IN(SELECT userId FROM connections WHERE connectedTo=${id} and status = "A")`
     )
 
     return results
@@ -479,12 +503,12 @@ exports.getConnections = async (_, __, { user }) => {
   }
 }
 
-exports.getConnectionsCount = async (_, __, { user }) => {
-  if (!user) throw new AuthenticationError("Unauthenticated")
+exports.getConnectionsCount = async (_, { id }) => {
+  // if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     let count = await Connections.count({
       where: {
-        userId: user.id,
+        userId: id,
         status: "A",
       },
     })
@@ -499,7 +523,7 @@ exports.getBlockedUsers = async (_, __, { user }) => {
 
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT userId FROM connections WHERE userId=${user.id} and status='B' and active_user_id = ${user.id})`
+      `SELECT * FROM users WHERE id IN(SELECT userId FROM connections WHERE userId=${user.id} and status='B' and active_user_id = ${user.id})`
     )
 
     return results
@@ -511,4 +535,56 @@ exports.getBlockedUsers = async (_, __, { user }) => {
 exports.getAllConnections = async () => {
   let connects = await ConnectionsRequests.findAll()
   return connects
+}
+
+exports.checkConnection = async (_, { id }, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  try {
+    let check = await Connections.findAll({
+      where: {
+        [Op.or]: [
+          {
+            [Op.and]: [{ userId: user.id }, { connectedTo: id }],
+          },
+          {
+            [Op.and]: [{ userId: id }, { connectedTo: user.id }],
+          },
+        ],
+        [Op.or]: [{ status: "A" }, { status: "B" }],
+      },
+    })
+    let RequestCheck = await ConnectionsRequests.findOne({
+      where: {
+        [Op.or]: [
+          {
+            [Op.and]: [{ requester: user.id }, { addressee: id }],
+          },
+          {
+            [Op.and]: [{ requester: id }, { addressee: user.id }],
+          },
+        ],
+      },
+    })
+    console.log(check, RequestCheck)
+    if (check && check.length > 0) {
+      return {
+        status: check[0].status,
+        value: true,
+      }
+    } else if (RequestCheck) {
+      // console.log("true")
+      return {
+        status: "Request",
+        value: true,
+      }
+    } else {
+      // console.log("false")
+      return {
+        status: "",
+        value: false,
+      }
+    }
+  } catch (err) {
+    throw err
+  }
 }

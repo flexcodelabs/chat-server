@@ -1,7 +1,6 @@
-const { Follow, Connections, Users } = require("../../models")
+const { Follow, Connections, Users, sequelize } = require("../../models")
 const { Op } = require("sequelize")
 const { UserInputError, AuthenticationError } = require("apollo-server")
-const { sequelize } = require("../../models")
 
 exports.follow = async (_, { id }, { user, pubsub }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
@@ -57,6 +56,8 @@ exports.follow = async (_, { id }, { user, pubsub }) => {
       pubsub.publish("NEW_FOLLOWER", {
         newFollower: { ...userData.toJSON(), userId: following.follows },
       })
+      console.log("success")
+
       return following
     }
   } catch (err) {
@@ -79,21 +80,24 @@ exports.unfollow = async (_, { id }, { user }) => {
           [Op.and]: [{ user: user.id }, { follows: id }],
         },
       })
+      console.log("success")
       return { ...check.toJSON(), unfollowing }
     } else {
       warning.msg = "Unauthorized"
+      console.log("error")
       throw new UserInputError("Bad Input", warning)
     }
   } catch (err) {
+    console.log(err)
     throw err
   }
 }
 
-exports.getFollowers = async (_, __, { user }) => {
-  if (!user) throw new AuthenticationError("Unauthenticated")
+exports.getFollowers = async (_, { id }) => {
+  // if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT user FROM follows WHERE follows=${user.id})`
+      `SELECT * FROM users WHERE id IN(SELECT user FROM follows WHERE follows=${id})`
     )
 
     return results
@@ -102,13 +106,13 @@ exports.getFollowers = async (_, __, { user }) => {
   }
 }
 
-exports.getFollowings = async (_, __, { user }) => {
-  console.log(user)
-  if (!user) throw new AuthenticationError("Unauthenticated")
+exports.getFollowings = async (_, { id }) => {
+  // console.log(user)
+  // if (!user) throw new AuthenticationError("Unauthenticated")
 
   try {
     const [results, metadata] = await sequelize.query(
-      `SELECT username, first_name, last_name FROM users WHERE id IN(SELECT follows FROM follows WHERE user=${user.id})`
+      `SELECT * FROM users WHERE id IN(SELECT follows FROM follows WHERE user=${id})`
     )
     return results
   } catch (err) {
@@ -116,12 +120,12 @@ exports.getFollowings = async (_, __, { user }) => {
   }
 }
 
-exports.getFollowersCount = async (_, __, { user }) => {
-  if (!user) throw new AuthenticationError("Unauthenticated")
+exports.getFollowersCount = async (_, { id }) => {
+  // if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     let count = await Follow.count({
       where: {
-        follows: user.id,
+        follows: id,
       },
     })
     return count
@@ -130,15 +134,33 @@ exports.getFollowersCount = async (_, __, { user }) => {
   }
 }
 
-exports.getFollowingsCount = async (_, __, { user }) => {
-  if (!user) throw new AuthenticationError("Unauthenticated")
+exports.getFollowingsCount = async (_, { id }) => {
+  // if (!user) throw new AuthenticationError("Unauthenticated")
   try {
     let count = await Follow.count({
       where: {
-        user: user.id,
+        user: id,
       },
     })
     return count
+  } catch (err) {
+    throw err
+  }
+}
+
+exports.checkFollowing = async (_, { id }, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  try {
+    let check = await Follow.findOne({
+      where: {
+        [Op.and]: [{ user: user.id }, { follows: id }],
+      },
+    })
+    if (check) {
+      return true
+    } else {
+      return false
+    }
   } catch (err) {
     throw err
   }

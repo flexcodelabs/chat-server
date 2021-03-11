@@ -6,7 +6,7 @@ module.exports = {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.BIGINT(11),
+        type: Sequelize.INTEGER,
       },
       first_name: {
         type: Sequelize.STRING(50),
@@ -71,6 +71,11 @@ module.exports = {
       dp: Sequelize.STRING,
       cover_image: Sequelize.STRING,
       location: Sequelize.STRING,
+      chatType: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: "private",
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

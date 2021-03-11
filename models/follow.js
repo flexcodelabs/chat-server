@@ -15,10 +15,12 @@ module.exports = (sequelize, DataTypes) => {
     {
       user: {
         type: DataTypes.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       follows: {
         type: DataTypes.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       updatedAt: {

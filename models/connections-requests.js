@@ -15,10 +15,12 @@ module.exports = (sequelize, DataTypes) => {
     {
       requester: {
         type: DataTypes.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       addressee: {
         type: DataTypes.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
     },

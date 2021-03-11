@@ -1,9 +1,23 @@
 const { withFilter, AuthenticationError } = require("apollo-server")
-const { register, verifyAccount, login, auth } = require("../controllers/users")
+const {
+  register,
+  verifyAccount,
+  login,
+  auth,
+  getUsers,
+} = require("../controllers/users")
+const {
+  sendMessage,
+  getMessages,
+  deleteMessage,
+  getMessagesAll,
+} = require("../controllers/messages")
+const { react, unreact } = require("../controllers/reactions")
 const {
   updateUserInfo,
   addDp,
   addCoverImg,
+  getUser,
 } = require("../controllers/user_profile")
 const {
   requestConnection,
@@ -15,6 +29,7 @@ const {
   getConnectionRequests,
   getAllConnections,
   getConnectionsCount,
+  checkConnection,
   getBlockedUsers,
   blockUser,
   unBlockUser,
@@ -26,7 +41,17 @@ const {
   getFollowings,
   getFollowersCount,
   getFollowingsCount,
+  checkFollowing,
 } = require("../controllers/follow")
+
+const {
+  rejectChat,
+  acceptChat,
+  requestChat,
+  getUserChats,
+  checkChat,
+  getChats,
+} = require("../controllers/chat")
 
 const { searchProfile } = require("../controllers/search")
 
@@ -45,6 +70,15 @@ module.exports = {
     getFollowersCount,
     getFollowingsCount,
     searchProfile,
+    getUser,
+    checkConnection,
+    checkFollowing,
+    getUserChats,
+    getUsers,
+    getChats,
+    checkChat,
+    getMessages,
+    getMessagesAll,
   },
   Mutation: {
     register,
@@ -60,6 +94,13 @@ module.exports = {
     unBlockUser,
     follow,
     unfollow,
+    rejectChat,
+    acceptChat,
+    requestChat,
+    react,
+    unreact,
+    sendMessage,
+    deleteMessage,
   },
   Subscription: {
     newFollower: {

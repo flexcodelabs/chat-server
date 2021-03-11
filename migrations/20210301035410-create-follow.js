@@ -10,10 +10,12 @@ module.exports = {
       },
       user: {
         type: Sequelize.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       follows: {
         type: Sequelize.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       createdAt: {

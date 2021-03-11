@@ -2,6 +2,7 @@ const { gql } = require("apollo-server")
 
 // The GraphQL schema
 module.exports = gql`
+  scalar Date
   type User {
     first_name: String!
     middle_name: String
@@ -26,6 +27,7 @@ module.exports = gql`
     location: String
     gender: String
     title: String
+    latestMessage: Message
   }
   type ConnectionRequest {
     id: Int
@@ -45,22 +47,66 @@ module.exports = gql`
     follows: Int!
   }
 
+  type ConnectionCheck {
+    status: String
+    value: Boolean!
+  }
+
+  type Chat {
+    id: Int!
+    user_one: Int!
+    user_two: Int
+    status: Boolean!
+    active_user: Int!
+  }
+
+  type Message {
+    id: Int!
+    senderId: Int!
+    recipientId: Int!
+    chatId: Int!
+    content: String!
+    media: String
+    media_type: String
+    links: [String]
+    read_status: Boolean!
+    received_status: Boolean!
+    delete_status: Boolean!
+    createdAt: Date!
+    reactions: [Reaction]
+  }
+
+  type Reaction {
+    id: Int!
+    messageId: Int!
+    userId: Int!
+    reaction: String!
+  }
+
   type Query {
     auth: User!
     login(email_username: String!, password: String!): User!
-    getFollowers: [User!]
-    getFollowings: [User!]
-    getConnections: [User]
+    getFollowers(id: Int!): [User!]
+    getFollowings(id: Int!): [User!]
+    getConnections(id: Int!): [User]
     getUnacceptedRequests: [User]
     getConnectionRequests: [User]
     getAllConnections: [ConnectionRequest]
     getUserConnectionRequests: [User]
-    getConnectionsCount: String
+    getConnectionsCount(id: Int!): String
+    checkFollowing(id: Int!): Boolean!
+    checkConnection(id: Int!): ConnectionCheck
     getBlockedUsers: [User]
     getUsers: [User!]
-    getFollowersCount: String
-    getFollowingsCount: String
+    getFollowersCount(id: Int!): String
+    getFollowingsCount(id: Int!): String
     searchProfile(keyword: String!): [User!]
+    getUser(id: Int!): User
+    getUserChats: [User]
+    getChats: [Chat]
+    checkChat(id: Int!): Chat
+    getMessages(id: Int!): [Message]
+    getMessagesAll: [Message]
   }
   type Mutation {
     register(
@@ -91,6 +137,20 @@ module.exports = gql`
     unBlockUser(userId: Int!): Connection
     follow(id: Int!): Follow
     unfollow(id: Int!): Follow
+    requestChat(id: Int!): Chat
+    acceptChat(id: Int!): Chat
+    rejectChat(id: Int!): Chat
+    sendMessage(
+      id: Int!
+      chatId: Int
+      content: String!
+      media: String
+      media_type: String
+      links: [String]
+    ): Message
+    deleteMessage(id: Int!): Message
+    react(id: Int!): Reaction
+    unreact(id: Int!): Reaction
   }
   type Subscription {
     newFollower: User

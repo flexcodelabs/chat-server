@@ -10,10 +10,12 @@ module.exports = {
       },
       requester: {
         type: Sequelize.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       addressee: {
         type: Sequelize.INTEGER,
+        foreignKey: true,
         allowNull: false,
       },
       createdAt: {
