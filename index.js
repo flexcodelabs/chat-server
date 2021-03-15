@@ -11,18 +11,21 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: contextMiddleware,
-  subscriptions: {
-    path: "/",
-  },
+  subscriptions: { path: "/" },
 })
 
-server.listen().then(({ url, subscriptionsUrl }) => {
-  console.log(`Server ready at ${url}`)
-  console.log(`Subscriptions ready at ${subscriptionsUrl}`)
-  sequelize
-    .authenticate()
-    .then(() => {
-      console.log("database connected...!!")
-    })
-    .catch((err) => console.log(err))
-})
+server
+  .listen()
+  .then(({ url, subscriptionsUrl }) => {
+    console.log(`Server ready at ${url}`)
+    console.log(`Subscriptions ready at ${subscriptionsUrl}`)
+    sequelize
+      .authenticate()
+      .then(() => {
+        console.log("database connected...!!")
+      })
+      .catch((err) => console.log(err))
+  })
+  .catch((err) => {
+    console.log(err)
+  })

@@ -71,7 +71,7 @@ exports.getMessages = async (_, { id }, { user }) => {
           },
         ],
       },
-      order: [["createdAt", "ASC"]],
+      order: [["createdAt", "DESC"]],
       include: [{ model: Reactions, as: "reactions" }],
     })
     return messages
