@@ -17,16 +17,12 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
-      middle_name: {
-        type: DataTypes.STRING(50),
-      },
       last_name: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
       username: {
         type: DataTypes.STRING(20),
-        allowNull: false,
         unique: true,
       },
       email: {

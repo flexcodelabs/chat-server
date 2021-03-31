@@ -4,6 +4,8 @@ const {
   verifyAccount,
   login,
   auth,
+  checkUsername,
+  addUsername,
   getUsers,
 } = require("../controllers/users")
 const {
@@ -79,6 +81,7 @@ module.exports = {
     checkChat,
     getMessages,
     getMessagesAll,
+    checkUsername,
   },
   Mutation: {
     register,
@@ -101,6 +104,7 @@ module.exports = {
     unreact,
     sendMessage,
     deleteMessage,
+    addUsername,
   },
   Subscription: {
     newFollower: {

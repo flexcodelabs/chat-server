@@ -5,16 +5,10 @@ const { Op } = require("sequelize")
 
 const { Users, Chats } = require("../../models")
 
+let format = /[ `!@#$%^&*()+\-=\[\]{};':"\\|,<>\/?~]/
+
 exports.register = async (_, args) => {
-  let {
-    first_name,
-    middle_name,
-    last_name,
-    username,
-    email,
-    password,
-    confirmPassword,
-  } = args
+  let { first_name, last_name, email, password, confirmPassword } = args
 
   // validate data
   let errors = {}
@@ -25,8 +19,7 @@ exports.register = async (_, args) => {
       errors.first_name = "This field shouldn't be empty"
     if (last_name.trim() === "")
       errors.last_name = "This field shouldn't be empty"
-    if (username.trim() === "")
-      errors.username = "This field shouldn't be empty"
+    if (email.trim() === "") errors.email = "This field shouldn't be empty"
     if (password.trim() === "")
       errors.password = "This field must have atleast 6 characters"
     if (confirmPassword.trim() === "")
@@ -46,9 +39,7 @@ exports.register = async (_, args) => {
 
     const user = await Users.create({
       first_name,
-      middle_name,
       last_name,
-      username,
       email,
       password,
       verification_code,
@@ -169,12 +160,68 @@ exports.verifyAccount = async (_, { code }, { user }) => {
         ...userData.toJSON(),
         token,
       }
-    } else {
-      throw error
     }
+    throw error
   } catch (err) {
-    console.log(err)
     throw new UserInputError("Bad Input", { error })
+  }
+}
+
+exports.checkUsername = async (_, { username }, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  let warning = null
+  let check = null
+  try {
+    if (username.trim().length < 3) warning = "Must be atleast three characters"
+    let chars = format.exec(username)
+    if (format.test(username))
+      warning = "Your username contains reserved character(s)"
+    if (chars) warning = `${chars[0]} is reserved character`
+    if (warning === null && !chars && !format.test(username))
+      check = await Users.findOne({
+        where: {
+          username,
+        },
+      })
+
+    if (check !== null) {
+      warning = `${username} is already taken`
+    }
+    if (warning) return warning
+    return "OK"
+  } catch (err) {
+    throw err
+  }
+}
+
+exports.addUsername = async (_, { username }, { user }) => {
+  if (!user) throw new AuthenticationError("Unauthenticated")
+  let error = null
+  try {
+    if (username.trim() === "") error = "This field is required"
+    let chars = format.exec(username)
+    if (format.test(username))
+      error = "Your username contains reserved character(s)"
+    if (chars) error = `${chars[0]} is reserved character`
+    if (error === null && !chars && !format.test(username)) {
+      let updateUser = await Users.update(
+        { username: username.trim() },
+        {
+          where: {
+            id: user.id,
+          },
+        },
+        { raw: true }
+      )
+      let userData = await Users.findOne({
+        where: {
+          id: user.id,
+        },
+      })
+      return userData
+    } else throw new UserInputError("Bad Input", { error })
+  } catch (err) {
+    throw err
   }
 }
 
@@ -194,6 +241,6 @@ exports.auth = async (_, __, { user }) => {
 }
 
 exports.getUsers = async () => {
-  let users = await Users.findAll()
+  let users = await Users.findAll({})
   return users
 }

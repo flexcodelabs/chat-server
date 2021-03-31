@@ -3,12 +3,12 @@ const { gql } = require("apollo-server")
 // The GraphQL schema
 module.exports = gql`
   scalar Date
+  scalar upload
   type User {
     first_name: String!
-    middle_name: String
     last_name: String!
     email: String!
-    username: String!
+    username: String
     status: String
     account_status: String!
     deleted_status: Boolean!
@@ -16,7 +16,7 @@ module.exports = gql`
     verification_code: Int!
     confirmed: Boolean!
     id: Int!
-    token: String!
+    token: String
     about: String
     bio: String
     DOB: String
@@ -83,9 +83,16 @@ module.exports = gql`
     reaction: String!
   }
 
+  type File {
+    filename: String!
+    mimetype: String!
+    encoding: String!
+  }
+
   type Query {
     auth: User!
     login(email_username: String!, password: String!): User!
+    checkUsername(username: String!): String
     getFollowers(id: Int!): [User!]
     getFollowings(id: Int!): [User!]
     getConnections(id: Int!): [User]
@@ -111,14 +118,13 @@ module.exports = gql`
   type Mutation {
     register(
       first_name: String!
-      middle_name: String
       last_name: String!
-      username: String!
       email: String!
       password: String!
       confirmPassword: String!
     ): User!
     verifyAccount(code: Int!): User!
+    addUsername(username: String!): User
     updateUserInfo(
       about: String
       bio: String
@@ -127,7 +133,7 @@ module.exports = gql`
       gender: String
       title: String
     ): User
-    addDp(dp: String): User!
+    addDp(dp: upload): User!
     addCoverImg(cover_image: String): User!
     requestConnection(addressee: Int!): Connection
     acceptConnection(requester: Int!): Connection

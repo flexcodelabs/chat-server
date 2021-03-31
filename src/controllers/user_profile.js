@@ -30,7 +30,7 @@ exports.updateUserInfo = async (_, args, { user }) => {
 
 exports.addDp = async (_, args, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
-  let {} = args
+  console.log(args.file)
 }
 
 exports.addCoverImg = async (_, args, { user }) => {
