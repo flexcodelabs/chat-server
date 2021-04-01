@@ -112,7 +112,7 @@ module.exports = gql`
     getUserChats: [User]
     getChats: [Chat]
     checkChat(id: Int!): Chat
-    getMessages(id: Int!): [Message]
+    getMessages(username: String!): [Message]
     getMessagesAll: [Message]
   }
   type Mutation {
@@ -147,7 +147,7 @@ module.exports = gql`
     acceptChat(id: Int!): Chat
     rejectChat(id: Int!): Chat
     sendMessage(
-      id: Int!
+      username: String!
       chatId: Int
       content: String!
       media: String

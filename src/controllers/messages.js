@@ -1,35 +1,44 @@
 const { AuthenticationError, UserInputError } = require("apollo-server")
 const { Op } = require("sequelize")
-const { Chats, sequelize, Messages, Reactions } = require("../../models")
+const { Chats, sequelize, Messages, Reactions, Users } = require("../../models")
 
 exports.sendMessage = async (
   _,
-  { id, chatId, content, media, media_type, links },
+  { username, chatId, content, media, media_type, links },
   { user }
 ) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let error = null
   try {
-    let chatCheck = await Chats.findOne({
-      where: {
-        [Op.or]: [
-          {
-            [Op.and]: [{ user_one: user.id }, { user_two: id }],
-          },
-          {
-            [Op.and]: [{ user_one: id }, { user_two: user.id }],
-          },
-        ],
-      },
-    })
     if (content.trim() === "") {
       error = "Content empty"
       throw new UserInputError("BAD_INPUT", { error })
     }
+    let anotherUser = await Users.findOne({
+      where: {
+        username,
+      },
+    })
+    let chatCheck
+    if (anotherUser) {
+      chatCheck = await Chats.findOne({
+        where: {
+          [Op.or]: [
+            {
+              [Op.and]: [{ user_one: user.id }, { user_two: anotherUser.id }],
+            },
+            {
+              [Op.and]: [{ user_one: anotherUser.id }, { user_two: user.id }],
+            },
+          ],
+        },
+      })
+    }
+
     if (chatCheck) {
       let msg = await Messages.create({
         senderId: user.id,
-        recipientId: id,
+        recipientId: anotherUser.id,
         chatId: chatCheck.id,
         content,
       })
@@ -37,14 +46,14 @@ exports.sendMessage = async (
     } else {
       let chat = await Chats.create({
         user_one: user.id,
-        user_two: id,
+        user_two: anotherUser.id,
         status: false,
         active_user: user.id,
       })
       if (chat) {
         let msg = await Messages.create({
           senderId: user.id,
-          recipientId: id,
+          recipientId: anotherUser.id,
           chatId: chat.id,
           content,
         })
@@ -57,23 +66,38 @@ exports.sendMessage = async (
   }
 }
 
-exports.getMessages = async (_, { id }, { user }) => {
+exports.getMessages = async (_, { username }, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   try {
-    let messages = await Messages.findAll({
+    let anotherUser = await Users.findOne({
       where: {
-        [Op.or]: [
-          {
-            [Op.and]: [{ senderId: user.id }, { recipientId: id }],
-          },
-          {
-            [Op.and]: [{ senderId: id }, { recipientId: user.id }],
-          },
-        ],
+        username,
       },
-      order: [["createdAt", "DESC"]],
-      include: [{ model: Reactions, as: "reactions" }],
     })
+    let messages
+    if (anotherUser) {
+      messages = await Messages.findAll({
+        where: {
+          [Op.or]: [
+            {
+              [Op.and]: [
+                { senderId: user.id },
+                { recipientId: anotherUser.id },
+              ],
+            },
+            {
+              [Op.and]: [
+                { senderId: anotherUser.id },
+                { recipientId: user.id },
+              ],
+            },
+          ],
+        },
+        order: [["createdAt", "DESC"]],
+        include: [{ model: Reactions, as: "reactions" }],
+      })
+    }
+
     return messages
   } catch (err) {
     throw err
