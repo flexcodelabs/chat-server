@@ -40,8 +40,8 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      status: {
-        type: DataTypes.STRING,
+      last_seen: {
+        type: DataTypes.DATE,
       },
       account_status: {
         type: DataTypes.STRING,

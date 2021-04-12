@@ -4,11 +4,12 @@ const { Chats, sequelize, Messages, Reactions, Users } = require("../../models")
 
 exports.sendMessage = async (
   _,
-  { username, chatId, content, media, media_type, links },
-  { user }
+  { username, chatId, content, media, media_type, links, parentId },
+  { user, pubsub }
 ) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
   let error = null
+  let parentMsg = null
   try {
     if (content.trim() === "") {
       error = "Content empty"
@@ -17,6 +18,11 @@ exports.sendMessage = async (
     let anotherUser = await Users.findOne({
       where: {
         username,
+      },
+    })
+    let sender = await Users.findOne({
+      where: {
+        id: user.id,
       },
     })
     let chatCheck
@@ -34,13 +40,26 @@ exports.sendMessage = async (
         },
       })
     }
-
+    if (parentId) {
+      parentMsg = await Messages.findOne({
+        where: {
+          id: parentId,
+        },
+      })
+    }
     if (chatCheck) {
       let msg = await Messages.create({
         senderId: user.id,
         recipientId: anotherUser.id,
         chatId: chatCheck.id,
         content,
+        parentId,
+      })
+      msg.recipient = anotherUser
+      msg.sender = sender
+      msg.parentMsg = parentMsg
+      pubsub.publish("NEW_MESSAGE", {
+        newMessage: msg,
       })
       return msg
     } else {
@@ -56,6 +75,13 @@ exports.sendMessage = async (
           recipientId: anotherUser.id,
           chatId: chat.id,
           content,
+          parentId,
+        })
+        msg.recipient = anotherUser
+        msg.sender = sender
+        msg.parentMsg = parentMsg
+        pubsub.publish("NEW_MESSAGE", {
+          newMessage: msg,
         })
         return msg
       }
@@ -94,10 +120,13 @@ exports.getMessages = async (_, { username }, { user }) => {
           ],
         },
         order: [["createdAt", "DESC"]],
-        include: [{ model: Reactions, as: "reactions" }],
       })
     }
-
+    messages = messages.map((message) => {
+      let parentMsg = messages.find((m) => m.id == message.parentId)
+      if (parentMsg) message.parentMsg = parentMsg
+      return message
+    })
     return messages
   } catch (err) {
     throw err

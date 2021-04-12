@@ -1,6 +1,6 @@
 const { AuthenticationError, UserInputError } = require("apollo-server")
 const { Op } = require("sequelize")
-const { Chats, sequelize, Messages } = require("../../models")
+const { Chats, sequelize, Messages, Users } = require("../../models")
 
 exports.requestChat = async (_, { id }, { user }) => {
   if (!user) throw new AuthenticationError("Unauthenticated")
@@ -134,10 +134,10 @@ exports.getUserChats = async (_, __, { user }) => {
   if (!user) throw new AuthenticationError("Unauthorized")
   try {
     const [result1, metadata] = await sequelize.query(
-      `SELECT * FROM users WHERE id IN(SELECT user_one FROM chats WHERE user_two=${user.id} ORDER BY updatedAt DESC)`
+      `SELECT * FROM users WHERE id IN(SELECT user_one FROM chats WHERE user_two=${user.id} ORDER BY updatedAt ASC)`
     )
     const [result2, metadata2] = await sequelize.query(
-      `SELECT * FROM users WHERE id IN(SELECT user_two FROM chats WHERE user_one=${user.id} and user_two!=${user.id} ORDER BY updatedAt DESC )`
+      `SELECT * FROM users WHERE id IN(SELECT user_two FROM chats WHERE user_one=${user.id} and user_two!=${user.id} ORDER BY updatedAt ASC)`
     )
     let messages = await Messages.findAll({
       where: {
@@ -146,19 +146,32 @@ exports.getUserChats = async (_, __, { user }) => {
       order: [["createdAt", "DESC"]],
     })
     let results = result1.concat(result2)
-
     results = results.map((otherUser) => {
       let latestMessage = messages.find(
         (m) =>
-          (m.senderId === otherUser.id && m.recipientId === user.id) ||
-          (m.senderId === user.id && m.recipientId === otherUser.id)
+          (m.senderId == otherUser.id && m.recipientId == user.id) ||
+          (m.senderId == user.id && m.recipientId == otherUser.id)
       )
-
-      otherUser.latestMessage = latestMessage
-      // console.log(latestMessage)
-      return otherUser
+      if (latestMessage) {
+        otherUser.latestMessage = latestMessage
+        return otherUser
+      }
     })
-    // console.log(results[1].latestMessage)
+    results = results.filter((el) => {
+      return el != null
+    })
+    if (results.length == 1) return results
+    if (results.length > 1) {
+      results = results
+        .slice()
+        .sort((a, b) =>
+          Number(
+            new Date(b.latestMessage.createdAt) -
+              new Date(a.latestMessage.createdAt)
+          )
+        )
+      return results
+    }
     return results
   } catch (err) {
     throw err

@@ -3,13 +3,12 @@ const { gql } = require("apollo-server")
 // The GraphQL schema
 module.exports = gql`
   scalar Date
-  scalar upload
   type User {
     first_name: String!
     last_name: String!
     email: String!
     username: String
-    status: String
+    last_seen: String
     account_status: String!
     deleted_status: Boolean!
     verified: Boolean!
@@ -68,12 +67,16 @@ module.exports = gql`
     content: String!
     media: String
     media_type: String
+    parentId: Int
+    parentMsg: Message
     links: [String]
     read_status: Boolean!
     received_status: Boolean!
     delete_status: Boolean!
     createdAt: Date!
     reactions: [Reaction]
+    sender: User
+    recipient: User
   }
 
   type Reaction {
@@ -93,6 +96,7 @@ module.exports = gql`
     auth: User!
     login(email_username: String!, password: String!): User!
     checkUsername(username: String!): String
+    getOnlineUsers: [User]
     getFollowers(id: Int!): [User!]
     getFollowings(id: Int!): [User!]
     getConnections(id: Int!): [User]
@@ -133,8 +137,9 @@ module.exports = gql`
       gender: String
       title: String
     ): User
-    addDp(dp: upload): User!
-    addCoverImg(cover_image: String): User!
+    addDp(dp: Upload!): File
+    addCoverImg(cover_image: Upload!): User!
+    updateLastSeen(now: Date!): User
     requestConnection(addressee: Int!): Connection
     acceptConnection(requester: Int!): Connection
     rejectConnection(requester: Int!): ConnectionRequest!
@@ -153,6 +158,7 @@ module.exports = gql`
       media: String
       media_type: String
       links: [String]
+      parentId: Int
     ): Message
     deleteMessage(id: Int!): Message
     react(id: Int!): Reaction
@@ -162,5 +168,7 @@ module.exports = gql`
     newFollower: User
     newConnectionRequest: User
     newConnection: User
+    newMessage: Message
+    userLastSeen: User
   }
 `

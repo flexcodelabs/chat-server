@@ -1,4 +1,5 @@
 const { withFilter, AuthenticationError } = require("apollo-server")
+const { Connections } = require("../../models")
 const {
   register,
   verifyAccount,
@@ -20,6 +21,8 @@ const {
   addDp,
   addCoverImg,
   getUser,
+  updateLastSeen,
+  getOnlineUsers,
 } = require("../controllers/user_profile")
 const {
   requestConnection,
@@ -82,6 +85,7 @@ module.exports = {
     getMessages,
     getMessagesAll,
     checkUsername,
+    getOnlineUsers,
   },
   Mutation: {
     register,
@@ -105,6 +109,7 @@ module.exports = {
     sendMessage,
     deleteMessage,
     addUsername,
+    updateLastSeen,
   },
   Subscription: {
     newFollower: {
@@ -142,7 +147,6 @@ module.exports = {
           return pubsub.asyncIterator("NEW_CONNECTION")
         },
         ({ newConnection }, _, { user }) => {
-          console.log(newConnection)
           if (
             (newConnection.userId === user.id ||
               newConnection.connectedTo === user.id) &&
@@ -151,6 +155,35 @@ module.exports = {
             return true
           }
           return false
+        }
+      ),
+    },
+    newMessage: {
+      subscribe: withFilter(
+        (_, __, { user, pubsub }) => {
+          if (!user) throw new AuthenticationError("Unauthenticated")
+          return pubsub.asyncIterator("NEW_MESSAGE")
+        },
+        ({ newMessage }, _, { user }) => {
+          console.log(newMessage)
+          let { senderId, recipientId } = newMessage
+          let { id } = user
+          if (id === senderId || id === recipientId) {
+            console.log(senderId, recipientId)
+            return true
+          }
+          return false
+        }
+      ),
+    },
+    userLastSeen: {
+      subscribe: withFilter(
+        (_, __, { user, pubsub }) => {
+          if (!user) throw new AuthenticationError("Unauthenticated")
+          return pubsub.asyncIterator("LAST_SEEN")
+        },
+        ({ userLastSeen }, _, { user }) => {
+          return true
         }
       ),
     },

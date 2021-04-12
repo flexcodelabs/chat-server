@@ -35,8 +35,8 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      status: {
-        type: Sequelize.STRING,
+      last_seen: {
+        type: Sequelize.DATE,
       },
       account_status: {
         type: Sequelize.STRING,
