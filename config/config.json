@@ -1,22 +1,22 @@
 {
   "development": {
     "username": "root",
-    "password": null,
-    "database": "jitangaze",
-    "host": "127.0.0.1",
+    "password": "",
+    "database": "chat_app",
+    "host": "chat_app",
     "dialect": "mysql"
   },
   "test": {
     "username": "root",
     "password": null,
-    "database": "database_test",
+    "database": "chat_test",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "production": {
     "username": "root",
     "password": null,
-    "database": "database_production",
+    "database": "chat_production",
     "host": "127.0.0.1",
     "dialect": "mysql"
   }
